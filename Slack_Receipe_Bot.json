@@ -1,0 +1,237 @@
+{
+  "name": "Slack_Receipe_Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "message"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C0C9M02PNDA",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        -16
+      ],
+      "id": "25b42035-808a-4028-88f3-ef891ec4e406",
+      "name": "Slack Trigger",
+      "webhookId": "72c86bad-f6d6-4680-be37-cfdcd82e9fab",
+      "credentials": {
+        "slackApi": {
+          "id": "ho2kAxmDRyu7hU5x",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8e6668a9-f587-4a4d-a208-8cf5b6451e78",
+              "name": "=recipe",
+              "value": "={{ $json.event?.text || $json.text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "3dbfc23b-5dc1-401d-941f-18a419a11289",
+              "name": "channelId",
+              "value": "={{ $json.event?.channel || $json.channel || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -144,
+        -176
+      ],
+      "id": "0153c4b8-4159-4461-a404-3eb6eee388ce",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a helpful cooking assistant.\n\nRecipe name: {{ $json.recipe }}\n\nList all ingredients needed to prepare this recipe for 2 people.\nInclude approximate quantities for each ingredient.\nFormat the answer as a clear bulleted list suitable for Slack.\nKeep the answer short and practical.\n\nIf the recipe name is empty, unclear, or not a recognizable dish, reply:\nPlease enter a valid recipe name. For example: Paneer Butter Masala.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        128,
+        -112
+      ],
+      "id": "bed0069b-ec5f-46c3-9885-935b4417333d",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        80
+      ],
+      "id": "4d81299f-dd51-4f30-8ec2-d8135bcfe83f",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "qj3AQFifxLW5qeYb",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').item.json.channelId }}",
+          "mode": "id"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        528,
+        -160
+      ],
+      "id": "044887c4-1ac3-4fc7-a82c-abc9266864f8",
+      "name": "Send a message",
+      "webhookId": "57ecec14-2341-4e45-a3bc-4779960951f0",
+      "credentials": {
+        "slackApi": {
+          "id": "ho2kAxmDRyu7hU5x",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8866d4c2-4300-41eb-ae42-54cdc04e44f2",
+              "leftValue": "={{ Boolean($json.event?.bot_id || $json.bot_id || $json.event?.subtype === 'bot_message' || $json.subtype === 'bot_message') }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -480,
+        -96
+      ],
+      "id": "894478f4-8b33-4534-8d43-a5e4f1745238",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "35d4ba47-d2b9-44db-8b5d-86cf828684b5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "90bf22d370cf94ed8c3782978f16a7f8f4bf91b7546816931d1c3c4aefa231d7"
+  },
+  "nodeGroups": [],
+  "id": "twzxkanokozgKcjA",
+  "tags": []
+}
